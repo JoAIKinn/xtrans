@@ -1,4 +1,4 @@
-# i18n-helper README
+# XTrans README
 
 This is a vscode plugin for i18n quick view
 
