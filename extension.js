@@ -120,48 +120,58 @@ async function activate() {
         }
 
         const { line, character } = position;
-
-        const start = new Position(
-          line,
-          character - 50 < 0 ? 0 : character - 50
-        );
-        const end = new Position(line, character + 50);
-        const biggerRange = new Range(start, end);
+        const biggerRange = new Range(line, 0, line + 1, 0);
         const wordInRange = document.getText(biggerRange);
 
-        // string in single quote
-        const regex = /\<Trans\>(.*?)\<\/Trans\>/g;
-        const match = wordInRange.match(regex);
-
-        if (match && match.length) {
-          const [str] = match;
-          const target = str.replace(`<Trans>`, "").replace(`</Trans>`, "");
+        // string in <Trans></Trans> | t('')
+        const transRegex = /\<Trans\>(.*?)\<\/Trans\>|t\(\'(.*?)\'\)/gi;
+        let arr;
+        let end = 0;
+        let matchs = [];
+        while ((arr = transRegex.exec(wordInRange)) !== null) {
+          const target =
+            arr[0]
+            .replace(`<Trans>`, "")
+            .replace(`</Trans>`, "")
+            .replace(`t('`, "")
+            .replace(`')`, "");
+          matchs.push({ start: end, end: transRegex.lastIndex, target });
+          end = transRegex.lastIndex;
+        }
+        
+        if (matchs && matchs.length) {
+          // support nested data
           // const getter = config.flatten
           //   ? [target]
           //   : target.split(".");
 
           let markdownStr = "";
 
-          projects.forEach(project => {
-            const { name, locales } = project;
-            let projectStr = "";
-            let translationStr = "";
-            locales.forEach(locale => {
-              const t = get(translation, [name, `/${locale}`, target]);
-              if (t) {
-                translationStr += `|${locale}|${t}|\n`;
-              }
-            });
-
-            if (translationStr.length) {
-              projectStr += `|${name}||\n`;
-              projectStr += "|:--|:--|\n";
-              projectStr += translationStr;
-              projectStr += '\n'
+          matchs.map((match) => {
+            if (character > match.start && character < match.end) {
+              projects.forEach(project => {
+                const { name, locales } = project;
+                let projectStr = "";
+                let translationStr = "";
+                locales.forEach(locale => {
+                  const t = get(translation, [name, `/${locale}`, match.target]);
+                  if (t) {
+                    translationStr += `|${locale}|${t}|\n`;
+                  }
+                });
+    
+                if (translationStr.length) {
+                  projectStr += `|${name}||\n`;
+                  projectStr += "|:--|:--|\n";
+                  projectStr += translationStr;
+                  projectStr += '\n'
+                }
+    
+                markdownStr += projectStr;
+              });
             }
-
-            markdownStr += projectStr;
-          });
+          })
+          
 
           if (markdownStr) {
             return new Hover(markdownStr);

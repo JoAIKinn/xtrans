@@ -2,7 +2,7 @@
   "name": "xtrans",
   "displayName": "xtrans",
   "description": "",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "engines": {
     "vscode": "^1.42.0"
   },
@@ -24,7 +24,8 @@
   "scripts": {
     "lint": "eslint .",
     "pretest": "npm run lint",
-    "test": "node ./test/runTest.js"
+    "test": "node ./test/runTest.js",
+    "package": "vsce package"
   },
   "repository": {
     "type": "git",
